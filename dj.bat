@@ -1,0 +1,2 @@
+node "dj.js"
+pause
