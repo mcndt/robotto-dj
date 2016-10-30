@@ -12,3 +12,9 @@ Features include:
 WIP features:
  - save playlists
  - load playlists
+ 
+ Depends on the following Node modules:
+ - discord.js
+ - fs
+ - ytdl-core
+ - youtube-node
