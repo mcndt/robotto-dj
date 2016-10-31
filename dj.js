@@ -53,7 +53,11 @@ bot.on("message", function(message) {
         if (cmd === "play") {
             if (arg[0]) {
 				if (arg[0].startsWith("https://www.youtube.com") || arg[0].startsWith("https://youtu.be")) {
-					addQueue(arg[0], queue);
+                    if (arg[0].startsWith("https://www.youtube.com/playlist?list=")) {
+                        addPlaylist(arg[0], queue);
+                    } else {
+                        addQueue(arg[0], queue);
+                    }
 				} else {
 					message.channel.sendMessage("That's not a YouTube link silly. :laughing:");
 				}
@@ -230,6 +234,11 @@ bot.on("message", function(message) {
     }
 
     // functions
+
+    function addPlaylist(link, queue) {
+        var id = link.slice(38);
+        message.channel.sendMessage("Adding playlists is currently not supported. :disappointed: ");
+    }
 
     function joinVoice() {
         if(message.member.voiceChannel) {
