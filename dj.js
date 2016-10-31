@@ -292,10 +292,7 @@ bot.on("message", function(message) {
     }
 
     function currentSongNotif(song, voice) {
-        utils.consoleLog("stream", `Now playing:
-	 		\n\tSong:    ${song.title}
-			\n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name}
-			\n\tRequest: #${song.reqChannel.name} -> ${song.addedBy.username}\n`);
+        utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.reqChannel.name} -> ${song.addedBy.username}\n`);
         if(currentSongMsg === false) {
             song.reqChannel.sendMessage(`Now playing: (requested by <@${song.addedBy.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
         } else {

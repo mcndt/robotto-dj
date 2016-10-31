@@ -3,7 +3,7 @@
 var exports = module.exports = {};
 
 // required modules
-var config = require("./dj-config.json");
+var config = require("./config.json");
 
 // utility functions
 // consoleLog
