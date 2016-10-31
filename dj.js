@@ -4,7 +4,7 @@ var discord    = require("discord.js"),
     ytdl       = require('ytdl-core'),
 	YouTube    = require('youtube-node'),
 	utils      = require("./utilities.js"),
-	config     = require("./dj-config.json");
+	config     = require("./config.json");
 
 // declaration of bot
 var bot = new discord.Client({autoReconnect: true});
@@ -24,7 +24,7 @@ ytsearch.setKey(config.youtubeDataAPIToken);
 bot.on("ready", function() {
     utils.consoleLog("system", "DJ is ready to operate!\n");
     bot.user.setUsername(config.displayName);
-    bot.user.setStatus("online", "- silent -");
+    bot.user.setGame(`- silent -`);
 });
 
 // command interpreter
@@ -87,7 +87,7 @@ bot.on("message", function(message) {
 				}
 			} else {
 				arg.forEach(arg => {
-					searchTerm += arg + " ";
+					searchTerm += `${arg} `;
 				});
 				searchTerm = searchTerm.slice(0, (searchTerm.length - 1));
 			}
@@ -136,7 +136,12 @@ bot.on("message", function(message) {
                 });
             }
         }
-    }
+
+        if (cmd === "help") {
+            message.author.sendMessage(utils.cmdList());
+        }
+
+        /*
         if (cmd === "playlist") {
             if (arg[0] === "save") {
                 if (queue.length > 0) {
@@ -198,6 +203,8 @@ bot.on("message", function(message) {
                 message.cannel.sendMessage("help:");
             }
         }
+        */
+    }
 
     // functions
 
@@ -217,7 +224,7 @@ bot.on("message", function(message) {
                 msg.delete();
                 if (responses.first().content.toLowerCase() === "yes" || responses.first().content.toLowerCase() === "y") {
 					console.log("yes, stop search");
-					addQueue("https://youtu.be/" + results.items[0].id.videoId, queue);
+					addQueue(`https://youtu.be/${results.items[0].id.videoId}`, queue);
 					return;
 				} else if (responses.first().content.toLowerCase() === "no" || responses.first().content.toLowerCase() === "n") {
 					console.log("no, next item if possible");
@@ -244,7 +251,7 @@ bot.on("message", function(message) {
                 info.addedBy = message.author;
                 info.reqChannel = message.channel;
                 queue.push(info);
-                utils.consoleLog("queue", info.addedBy.username + " added " + info.title + " to the queue.\n");
+                utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
                 message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
                 if(!message.guild.voiceConnection) {
                     // Case 1: no voice conn exists.
@@ -292,10 +299,7 @@ bot.on("message", function(message) {
     }
 
     function currentSongNotif(song, voice) {
-        utils.consoleLog("stream", "Now playing: "
-	 		+ "\n\tSong:    " + song.title
-			+ "\n\tChannel: " + voice.channel.guild.name + " -> " + voice.channel.name
-			+ "\n\tRequest: #" + song.reqChannel.name + " -> " + song.addedBy.username + "\n");
+        utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.reqChannel.name} -> ${song.addedBy.username}\n`);
         if(currentSongMsg === false) {
             song.reqChannel.sendMessage(`Now playing: (requested by <@${song.addedBy.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
         } else {
@@ -328,11 +332,11 @@ bot.on("message", function(message) {
     function printQueue(queue) {
         var list = "";
         if (currentSong !== null) {
-            list = "***Playing:*** " + currentSong.title + " `[" + secToMin(currentSong.length_seconds) + "]` `" + currentSong.addedBy.username + "`\n\n" ;
+            list = `***Playing:*** ${currentSong.title} \`[${secToMin(currentSong.length_seconds)}]\` \`${currentSong.addedBy.username}\`\n\n` ;
         }
         if (queue.length > 0) {
             for ( i = 0; i < queue.length; i++) {
-                list += "**" + (i+1) + ".** " + queue[i].title + " `[" + secToMin(queue[i].length_seconds) + "]` `" + queue[i].addedBy.username + "`\n"
+                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`
             }
         } else {
             list += `\t(*Empty*)`
@@ -354,7 +358,7 @@ bot.on("message", function(message) {
 
 process.on('uncaughtException', function(err) {
     if (err.code === "ECONNRESET") {
-        console.log("ECONNRESET")
+        consoleLog("ERROR", "ECONNRESET :(");
     } else {
         throw err;
     }
