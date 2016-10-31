@@ -136,7 +136,8 @@ bot.on("message", function(message) {
                 });
             }
         }
-    }
+
+        /*
         if (cmd === "playlist") {
             if (arg[0] === "save") {
                 if (queue.length > 0) {
@@ -198,6 +199,8 @@ bot.on("message", function(message) {
                 message.cannel.sendMessage("help:");
             }
         }
+        */
+    }
 
     // functions
 
@@ -351,7 +354,7 @@ bot.on("message", function(message) {
 
 process.on('uncaughtException', function(err) {
     if (err.code === "ECONNRESET") {
-        console.log("ECONNRESET")
+        consoleLog("ERROR", "ECONNRESET :(");
     } else {
         throw err;
     }
