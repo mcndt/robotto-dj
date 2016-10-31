@@ -108,6 +108,29 @@ bot.on("message", function(message) {
             if(playing === true) {
                 dispatcher.end();
                 message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+            } else {
+                message.channel.sendMessage("You can't skip silence! :face_palm: ");
+            }
+        }
+
+        if (cmd === "voteskip") {
+            if(playing === true) {
+                if (currentSong.voters.indexOf(message.author.id) < 0) {
+                    currentSong.votes += 1;
+                    currentSong.voters.push(message.author.id);
+                    currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
+                    if (currentSong.votes >= currentSong.votesNeeded) {
+                        let skippedSong = currentSong;
+                        dispatcher.end();
+                        message.channel.sendMessage(`${skippedSong.votes}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
+                    } else {
+                        message.channel.sendMessage(`${currentSong.votes}/${currentSong.votesNeeded} votes received. Need ${currentSong.votesNeeded - currentSong.votes} more...`);
+                    }
+                } else {
+                    message.channel.sendMessage(`You already voted! :upside_down:`)
+                }
+            } else {
+                message.channel.sendMessage("You can't skip silence! :face_palm: ");
             }
         }
 
@@ -250,6 +273,8 @@ bot.on("message", function(message) {
             try {
                 info.addedBy = message.author;
                 info.reqChannel = message.channel;
+                info.votes = 0;
+                info.voters = [];
                 queue.push(info);
                 utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
                 message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
@@ -336,10 +361,10 @@ bot.on("message", function(message) {
         }
         if (queue.length > 0) {
             for ( i = 0; i < queue.length; i++) {
-                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`
+                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`;
             }
         } else {
-            list += `\t(*Empty*)`
+            list += `\t(*Empty*)`;
         }
 		return list;
 	}
