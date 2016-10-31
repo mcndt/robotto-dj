@@ -137,6 +137,10 @@ bot.on("message", function(message) {
             }
         }
 
+        if (cmd === "help") {
+            message.author.sendMessage(utils.cmdList());
+        }
+
         /*
         if (cmd === "playlist") {
             if (arg[0] === "save") {

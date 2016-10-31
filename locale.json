@@ -1,0 +1,40 @@
+{
+    "commands": [
+        {
+            "cmd": "join",
+            "descr": "Makes me join your current voice channel."
+        },
+        {
+            "cmd": "leave",
+            "descr": "Show me the door. I'll leave your current voice channel."
+        },
+        {
+            "cmd": "play {youtube link}",
+            "descr": "Add a specific YouTube URL to the queue. Does not support playlists at this moment."
+        },
+        {
+            "cmd": "search [amount of results] {search term}",
+            "descr": "Amount of results is optional. Default is 1, max. is 5. If your search term starts with a number, use quotation marks."
+        },
+        {
+            "cmd": "skip",
+            "descr": "Skips the currently playing song."
+        },
+        {
+            "cmd": "pause",
+            "descr": "Pauses the stream."
+        },
+        {
+            "cmd": "resume",
+            "descr": "Resumes the stream."
+        },
+        {
+            "cmd": "queue",
+            "descr": "Shows the queue and its length."
+        },
+        {
+            "cmd": "shuffle",
+            "descr": "I'll shuffle the queue as well as a deck of cards."
+        }
+    ]
+}
