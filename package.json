@@ -1,0 +1,25 @@
+{
+  "name": "robotto-dj",
+  "version": "0.8.1",
+  "description": "Just another Discord.js music bot. Downloadable by anyone.",
+  "main": "dj.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcndt/robotto-dj.git"
+  },
+  "author": "mcndt",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "10.x.x",
+    "node-opus": "*",
+    "ytdl-core": "0.7.x",
+    "youtube-node": "1.3.x"
+  },
+  "bugs": {
+    "url": "https://github.com/mcndt/robotto-dj/issues"
+  },
+  "homepage": "https://github.com/mcndt/robotto-dj#readme"
+}
