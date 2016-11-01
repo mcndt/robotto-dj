@@ -109,11 +109,15 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "skip") {
-            if(playing === true) {
-                dispatcher.end();
-                message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+            if (config.masterDJ.indexOf(message.author.id) >= 0) {
+                if(playing === true) {
+                    dispatcher.end();
+                    message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+                } else {
+                    message.channel.sendMessage("You can't skip silence! :face_palm: ");
+                }
             } else {
-                message.channel.sendMessage("You can't skip silence! :face_palm: ");
+                message.channel.sendMessage("You are not authorized to skip a song on demand. Only our benevolent dictators can do that.");
             }
         }
 
