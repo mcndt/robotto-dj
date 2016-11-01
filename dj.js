@@ -172,70 +172,57 @@ bot.on("message", function(message) {
             message.author.sendMessage(utils.cmdList());
         }
 
-        /*
         if (cmd === "playlist") {
-            if (arg[0] === "save") {
-                if (queue.length > 0) {
-                    if (arg[1]) {
-                        let idList = new Array();
-                        for(i = 0; i < queue.length; i++) {
-                            idList.push({
-                                id: queue[i].video_id, title: queue[i].title});
-                        }
-                        let playList = JSON.stringify(idList);
-                        try {
-                            let stats = fs.lstatSync(`./playlists/${arg[1]}.json`);
-                            if (stats.isFile() === true) {
-                                message.channel.sendMessage(`This name is already in use. Please specify a different playlist name. (Using no spaces)`);
-                            }
-                        } catch (err) {
-                            if (err.code ===`ENOENT`) {
-                                fs.writeFile(`./playlists/${arg[1]}.json`, playList, err => {
-                                    if (err) {
-                                        console.log(err);
+            if (arg[0] === "load") {
+                // loading from text file
+                try {
+                    let textfile = fs.lstatSync(`./playlists/${arg[1]}.txt`);
+                    if (textfile.isFile() === true) {
+                    /*    var text = fs.readFileSync(`./playlists/${arg[1]}.txt`, "utf8");
+                        console.log(text);
+                        message.channel.sendMessage("here is it:" + text);
+                        var links = text.split("\n");
+                        //console.log(links); */
+
+                        var links = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\n");
+                        console.log(links);
+
+                        // playing list / adding list
+                        if (playing === true) {
+                            const filter = message => message.author.id === results.userId;
+                            message.channel.sendMessage(`:point_up: This playlist contains ${links.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`)`).then(msg => {
+                                message.channel.awaitMessages(filter, {max: 1}).then(responses => {
+                                    msg.delete();
+                                    if(responses.first().content.toLowerCase().startsWith("o") === true) {
+                                        queue = [];
+                                        dispatcher.end();
+                                        addQueue(links[1]);
+                                        links.splice(0,1);
+                                        addQueueList(links, queue);
+                                    } else if (responses.first().content.toLowerCase().startsWith("a") === true) {
+                                        addQueueList(links, queue);
                                     } else {
-                                        utils.consoleLog(`Playlist`, `Saved playlist ${arg[1]} containing ${idList.length} songs.`);
-                                        message.channel.sendMessage(`Saved the current queue as the playlist \`${arg[1]}\` containing ${idList.length} songs.`);
+                                        message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(10000)});;
                                     }
                                 });
-                            } else {
-                                console.log(err);
-                            }
+                            });
+                        } else {
+                            addQueue(links[1]);
+                            links.splice(0,1);
+                            addQueueList(links, queue);
                         }
-                    } else {
-                        message.channel.sendMessage("You must specify a name for your playlist! Keep in mind spaces will not be recognized.");
-                    }
-                } else {
-                    message.channel.sendMessage("There is currently no queue to save!").then(sent => {sent.delete(5000);});
-                }
-            } else if (arg[0] === "load") {
-                try {
-                    let stats = fs.lstatSync(`./playlists/${arg[1]}.json`);
-                    if (stats.isFile() === true) {
-                        let list = require(`./playlists/${arg[1]}.json`);
-                        addQueue(`https://youtu.be/${list[0].id}`, queue);
-                        setTimeout( () => {
-                            for (i = 0; i < list.length; i++) {
-                                let id = list[i].id;
-                                setTimeout( () => {addQueue(`https://youtu.be/${id}`, queue)}, (i * 1000) );
-                            }
-                        }, 5000);
                     }
                 } catch (err) {
                     if (err.code ===`ENOENT`) {
-                        message.channel.sendMessage(`That playlist doesn't exist! Use \`&list\` to see available playlists.`);
+                        message.channel.sendMessage(`That playlist doesn't exist! Use \`&playlist list\` to see available playlists. :paperclips: `).then(sent => {sent.delete(10000)});;
                     } else {
                         console.log(err);
                     }
                 }
-            } else if (arg[0] === "list") {
-
-            } else {
-                message.cannel.sendMessage("help:");
             }
         }
-        */
     }
+
 
     // functions
 
@@ -279,6 +266,28 @@ bot.on("message", function(message) {
             });
         });
 
+    }
+
+    function addQueueList(list, queue) {
+        if (list.length > 0) {
+            ytdl.getInfo(link, function(err, info) {
+                try {
+                    info.addedBy = message.author;
+                    info.reqChannel = message.channel;
+                    info.votes = 0;
+                    info.voters = [];
+                    queue.push(info);
+                    utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
+                    list.splice(0,1);
+                    addQueueList(list, queue);
+                } catch(err) {
+                    console.log(err);
+    				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
+    			}
+            });
+        } else {
+            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue)}]\``);
+        }
     }
 
     function addQueue(link, queue) {
