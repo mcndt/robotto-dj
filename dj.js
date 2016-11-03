@@ -219,22 +219,25 @@ bot.on("message", function(message) {
     function confirmResult(results) {
         var linkId = results.items[0].id.videoId;
         const filter = message => message.author.id === results.userId;
-        message.channel.sendMessage(`Is this your video? Say \`yes\`/\`no\`/\`cancel\`.\nhttps://youtu.be/${results.items[0].id.videoId}`).then(msg => {
+        message.channel.sendMessage(`Is this your video? Say \`yes\`/\`no\`/\`cancel\`.\nhttps://youtu.be/${results.items[0].id.videoId}`).then(prompt => {
             message.channel.awaitMessages(filter, {max: 1}).then(responses => {
+                prompt.delete();
                 if (responses.first().content.toLowerCase() === "yes" || responses.first().content.toLowerCase() === "y") {
 					console.log("yes, stop search");
 					addQueue(`https://youtu.be/${results.items[0].id.videoId}`, queue);
-					return;
+          responses.first().delete();
+          return;
 				} else if (responses.first().content.toLowerCase() === "no" || responses.first().content.toLowerCase() === "n") {
 					console.log("no, next item if possible");
 					results.items.splice(0, 1);
 					if (results.items.length > 0) {
-						confirmResult(results);
+            responses.first().delete();
+            confirmResult(results);
 					} else {
 						message.channel.sendMessage("Reached end of search results, you picky bastard! :upside_down:").then(sent => {sent.delete(7500)});
-						return;
+            responses.first().delete();
+            return;
 					}
-          responses.first().delete();
 				} else {
 					console.log("canceled");
 					message.channel.sendMessage("Search canceled. :no_entry_sign:").then(sent => {sent.delete(7500)});
