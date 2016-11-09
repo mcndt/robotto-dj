@@ -178,28 +178,23 @@ bot.on("message", function(message) {
                 try {
                     let textfile = fs.lstatSync(`./playlists/${arg[1]}.txt`);
                     if (textfile.isFile() === true) {
-                    /*    var text = fs.readFileSync(`./playlists/${arg[1]}.txt`, "utf8");
-                        console.log(text);
-                        message.channel.sendMessage("here is it:" + text);
-                        var links = text.split("\n");
-                        //console.log(links); */
-
-                        var links = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\n");
-                        console.log(links);
+                        var links = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
 
                         // playing list / adding list
                         if (playing === true) {
-                            const filter = message => message.author.id === results.userId;
-                            message.channel.sendMessage(`:point_up: This playlist contains ${links.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`)`).then(msg => {
+                            const filter = inputMsg => message.author.id === inputMsg.author.id;
+                            message.channel.sendMessage(`:point_up: This playlist contains ${links.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`verride)`).then(msg => {
                                 message.channel.awaitMessages(filter, {max: 1}).then(responses => {
                                     msg.delete();
                                     if(responses.first().content.toLowerCase().startsWith("o") === true) {
                                         queue = [];
                                         dispatcher.end();
-                                        addQueue(links[1]);
+                                        addQueue(links[0]);
                                         links.splice(0,1);
                                         addQueueList(links, queue);
+                                        message.channel.sendMessage(`Resetting queue and adding ${links.length} songs to the queue...`);
                                     } else if (responses.first().content.toLowerCase().startsWith("a") === true) {
+                                        message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
                                         addQueueList(links, queue);
                                     } else {
                                         message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(10000)});;
@@ -207,7 +202,8 @@ bot.on("message", function(message) {
                                 });
                             });
                         } else {
-                            addQueue(links[1]);
+                            message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
+                            addQueue(links[0], queue);
                             links.splice(0,1);
                             addQueueList(links, queue);
                         }
@@ -270,7 +266,7 @@ bot.on("message", function(message) {
 
     function addQueueList(list, queue) {
         if (list.length > 0) {
-            ytdl.getInfo(link, function(err, info) {
+            ytdl.getInfo(list[0], function(err, info) {
                 try {
                     info.addedBy = message.author;
                     info.reqChannel = message.channel;
@@ -281,8 +277,9 @@ bot.on("message", function(message) {
                     list.splice(0,1);
                     addQueueList(list, queue);
                 } catch(err) {
-                    console.log(err);
     				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
+                    list.splice(0,1);
+                    addQueueList(list, queue);
     			}
             });
         } else {
@@ -313,7 +310,6 @@ bot.on("message", function(message) {
                     // do nothing
                 }
             } catch(err) {
-                console.log(err);
 				message.channel.sendMessage("Either that is not a video, or it is not available where I am. :sob:");
 				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
 			}
