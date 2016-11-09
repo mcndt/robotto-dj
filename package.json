@@ -1,6 +1,6 @@
 {
   "name": "robotto-dj",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Just another Discord.js music bot. Downloadable by anyone.",
   "main": "dj.js",
   "scripts": {
