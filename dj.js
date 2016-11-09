@@ -53,7 +53,11 @@ bot.on("message", function(message) {
         if (cmd === "play") {
             if (arg[0]) {
 				if (arg[0].startsWith("https://www.youtube.com") || arg[0].startsWith("https://youtu.be")) {
-					addQueue(arg[0], queue);
+                    if (arg[0].startsWith("https://www.youtube.com/playlist?list=")) {
+                        addPlaylist(arg[0], queue);
+                    } else {
+                        addQueue(arg[0], queue);
+                    }
 				} else {
 					message.channel.sendMessage("That's not a YouTube link silly. :laughing:");
 				}
@@ -105,9 +109,36 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "skip") {
+            if (config.masterDJ.indexOf(message.author.id) >= 0) {
+                if(playing === true) {
+                    dispatcher.end();
+                    message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+                } else {
+                    message.channel.sendMessage("You can't skip silence! :face_palm: ");
+                }
+            } else {
+                message.channel.sendMessage("You are not authorized to skip a song on demand. Only our benevolent dictators can do that.");
+            }
+        }
+
+        if (cmd === "voteskip") {
             if(playing === true) {
-                dispatcher.end();
-                message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+                if (currentSong.voters.indexOf(message.author.id) < 0) {
+                    currentSong.votes += 1;
+                    currentSong.voters.push(message.author.id);
+                    currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
+                    if (currentSong.votes >= currentSong.votesNeeded) {
+                        let skippedSong = currentSong;
+                        dispatcher.end();
+                        message.channel.sendMessage(`${skippedSong.votes}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
+                    } else {
+                        message.channel.sendMessage(`${currentSong.votes}/${currentSong.votesNeeded} votes received. Need ${currentSong.votesNeeded - currentSong.votes} more...`);
+                    }
+                } else {
+                    message.channel.sendMessage(`You already voted! :upside_down:`)
+                }
+            } else {
+                message.channel.sendMessage("You can't skip silence! :face_palm: ");
             }
         }
 
@@ -141,72 +172,60 @@ bot.on("message", function(message) {
             message.author.sendMessage(utils.cmdList());
         }
 
-        /*
         if (cmd === "playlist") {
-            if (arg[0] === "save") {
-                if (queue.length > 0) {
-                    if (arg[1]) {
-                        let idList = new Array();
-                        for(i = 0; i < queue.length; i++) {
-                            idList.push({
-                                id: queue[i].video_id, title: queue[i].title});
-                        }
-                        let playList = JSON.stringify(idList);
-                        try {
-                            let stats = fs.lstatSync(`./playlists/${arg[1]}.json`);
-                            if (stats.isFile() === true) {
-                                message.channel.sendMessage(`This name is already in use. Please specify a different playlist name. (Using no spaces)`);
-                            }
-                        } catch (err) {
-                            if (err.code ===`ENOENT`) {
-                                fs.writeFile(`./playlists/${arg[1]}.json`, playList, err => {
-                                    if (err) {
-                                        console.log(err);
+            if (arg[0] === "load") {
+                // loading from text file
+                try {
+                    let textfile = fs.lstatSync(`./playlists/${arg[1]}.txt`);
+                    if (textfile.isFile() === true) {
+                        var links = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
+
+                        // playing list / adding list
+                        if (playing === true) {
+                            const filter = inputMsg => message.author.id === inputMsg.author.id;
+                            message.channel.sendMessage(`:point_up: This playlist contains ${links.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`verride)`).then(msg => {
+                                message.channel.awaitMessages(filter, {max: 1}).then(responses => {
+                                    msg.delete();
+                                    if(responses.first().content.toLowerCase().startsWith("o") === true) {
+                                        queue = [];
+                                        dispatcher.end();
+                                        addQueue(links[0]);
+                                        links.splice(0,1);
+                                        addQueueList(links, queue);
+                                        message.channel.sendMessage(`Resetting queue and adding ${links.length} songs to the queue...`);
+                                    } else if (responses.first().content.toLowerCase().startsWith("a") === true) {
+                                        message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
+                                        addQueueList(links, queue);
                                     } else {
-                                        utils.consoleLog(`Playlist`, `Saved playlist ${arg[1]} containing ${idList.length} songs.`);
-                                        message.channel.sendMessage(`Saved the current queue as the playlist \`${arg[1]}\` containing ${idList.length} songs.`);
+                                        message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(10000)});;
                                     }
                                 });
-                            } else {
-                                console.log(err);
-                            }
+                            });
+                        } else {
+                            message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
+                            addQueue(links[0], queue);
+                            links.splice(0,1);
+                            addQueueList(links, queue);
                         }
-                    } else {
-                        message.channel.sendMessage("You must specify a name for your playlist! Keep in mind spaces will not be recognized.");
-                    }
-                } else {
-                    message.channel.sendMessage("There is currently no queue to save!").then(sent => {sent.delete(5000);});
-                }
-            } else if (arg[0] === "load") {
-                try {
-                    let stats = fs.lstatSync(`./playlists/${arg[1]}.json`);
-                    if (stats.isFile() === true) {
-                        let list = require(`./playlists/${arg[1]}.json`);
-                        addQueue(`https://youtu.be/${list[0].id}`, queue);
-                        setTimeout( () => {
-                            for (i = 0; i < list.length; i++) {
-                                let id = list[i].id;
-                                setTimeout( () => {addQueue(`https://youtu.be/${id}`, queue)}, (i * 1000) );
-                            }
-                        }, 5000);
                     }
                 } catch (err) {
                     if (err.code ===`ENOENT`) {
-                        message.channel.sendMessage(`That playlist doesn't exist! Use \`&list\` to see available playlists.`);
+                        message.channel.sendMessage(`That playlist doesn't exist! Use \`&playlist list\` to see available playlists. :paperclips: `).then(sent => {sent.delete(10000)});;
                     } else {
                         console.log(err);
                     }
                 }
-            } else if (arg[0] === "list") {
-
-            } else {
-                message.cannel.sendMessage("help:");
             }
         }
-        */
     }
 
+
     // functions
+
+    function addPlaylist(link, queue) {
+        var id = link.slice(38);
+        message.channel.sendMessage("Adding playlists is currently not supported. :disappointed: ");
+    }
 
     function joinVoice() {
         if(message.member.voiceChannel) {
@@ -245,11 +264,36 @@ bot.on("message", function(message) {
 
     }
 
+    function addQueueList(list, queue) {
+        if (list.length > 0) {
+            ytdl.getInfo(list[0], function(err, info) {
+                try {
+                    info.addedBy = message.author;
+                    info.reqChannel = message.channel;
+                    info.votes = 0;
+                    info.voters = [];
+                    queue.push(info);
+                    utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
+                    list.splice(0,1);
+                    addQueueList(list, queue);
+                } catch(err) {
+    				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
+                    list.splice(0,1);
+                    addQueueList(list, queue);
+    			}
+            });
+        } else {
+            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue)}]\``);
+        }
+    }
+
     function addQueue(link, queue) {
         ytdl.getInfo(link, function(err, info) {
             try {
                 info.addedBy = message.author;
                 info.reqChannel = message.channel;
+                info.votes = 0;
+                info.voters = [];
                 queue.push(info);
                 utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
                 message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
@@ -266,7 +310,6 @@ bot.on("message", function(message) {
                     // do nothing
                 }
             } catch(err) {
-                console.log(err);
 				message.channel.sendMessage("Either that is not a video, or it is not available where I am. :sob:");
 				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
 			}
@@ -336,10 +379,10 @@ bot.on("message", function(message) {
         }
         if (queue.length > 0) {
             for ( i = 0; i < queue.length; i++) {
-                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`
+                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`;
             }
         } else {
-            list += `\t(*Empty*)`
+            list += `\t(*Empty*)`;
         }
 		return list;
 	}
