@@ -1,4 +1,4 @@
-playlists/
+playlists/*
 node_modules/
 config.json
 !playlists/example.txt
