@@ -124,15 +124,15 @@ bot.on("message", function(message) {
         if (cmd === "voteskip") {
             if(playing === true) {
                 if (currentSong.voters.indexOf(message.author.id) < 0) {
-                    currentSong.votes += 1;
+                    currentSong.voteskips += 1;
                     currentSong.voters.push(message.author.id);
                     currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
-                    if (currentSong.votes >= currentSong.votesNeeded) {
+                    if (currentSong.voteskips >= currentSong.votesNeeded) {
                         let skippedSong = currentSong;
                         dispatcher.end();
-                        message.channel.sendMessage(`${skippedSong.votes}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
+                        message.channel.sendMessage(`${skippedSong.voteskips}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
                     } else {
-                        message.channel.sendMessage(`${currentSong.votes}/${currentSong.votesNeeded} votes received. Need ${currentSong.votesNeeded - currentSong.votes} more...`);
+                        message.channel.sendMessage(`${currentSong.voteskips}/${currentSong.votesNeeded} votes received. Need ${currentSong.votesNeeded - currentSong.voteskips} more...`);
                     }
                 } else {
                     message.channel.sendMessage(`You already voted! :upside_down:`)
