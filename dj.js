@@ -11,7 +11,7 @@ var bot = new discord.Client({autoReconnect: true});
 var ytsearch = new YouTube();
 ytsearch.addParam("type", "video");
 
-var queue = [];
+var queue = {};
 var playing = false;
 var currentSong = null;
 var currentSongMsg = false;
@@ -95,8 +95,6 @@ bot.on("message", function(message) {
 				});
 				searchTerm = searchTerm.slice(0, (searchTerm.length - 1));
 			}
-			console.log(`Results requested: ${amount}`);
-			console.log(`"${searchTerm}"`);
             // youtube searchin'
             ytsearch.search(searchTerm, amount, function(err, results) {
 				if (err) {
@@ -110,8 +108,8 @@ bot.on("message", function(message) {
 
         if (cmd === "skip") {
             if (config.masterDJ.indexOf(message.author.id) >= 0) {
-                if(playing === true) {
-                    dispatcher.end();
+                if(queue[message.guild.id].playing === true) {
+                    queue[message.guild.id].dispatcher.end();
                     message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
                 } else {
                     message.channel.sendMessage("You can't skip silence! :face_palm: ");
@@ -122,17 +120,17 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "voteskip") {
-            if(playing === true) {
-                if (currentSong.voters.indexOf(message.author.id) < 0) {
-                    currentSong.voteskips += 1;
-                    currentSong.voters.push(message.author.id);
-                    currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
-                    if (currentSong.voteskips >= currentSong.votesNeeded) {
-                        let skippedSong = currentSong;
-                        dispatcher.end();
+            if(queue[message.guild.id].playing === true) {
+                if (queue[message.guild.id].currentSong.voters.indexOf(message.author.id) < 0) {
+                    queue[message.guild.id].currentSong.voteskips += 1;
+                    queue[message.guild.id].currentSong.voters.push(message.author.id);
+                    queue[message.guild.id].currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
+                    if (queue[message.guild.id].currentSong.voteskips >= queue[message.guild.id].currentSong.votesNeeded) {
+                        let skippedSong = queue[message.guild.id].currentSong;
+                        queue[message.guild.id].dispatcher.end();
                         message.channel.sendMessage(`${skippedSong.voteskips}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
                     } else {
-                        message.channel.sendMessage(`${currentSong.voteskips}/${currentSong.votesNeeded} votes received. Need ${currentSong.votesNeeded - currentSong.voteskips} more...`);
+                        message.channel.sendMessage(`${queue[message.guild.id].currentSong.voteskips}/${queue[message.guild.id].currentSong.votesNeeded} votes received. Need ${queue[message.guild.id].currentSong.votesNeeded - queue[message.guild.id].currentSong.voteskips} more...`);
                     }
                 } else {
                     message.channel.sendMessage(`You already voted! :upside_down:`)
@@ -143,24 +141,24 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "pause") {
-            if(playing === true) {
-                dispatcher.pause();
+            if(queue[message.guild.id].playing === true) {
+                queue[message.guild.id].dispatcher.pause();
             }
         }
 
         if (cmd === "resume") {
-            if(playing === true) {
-                dispatcher.resume();
+            if(queue[message.guild.id].playing === true) {
+                queue[message.guild.id].dispatcher.resume();
             }
         }
 
         if (cmd === "queue") {
-            message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue)}*) \n\n${printQueue(queue)}`);
+            message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id].songs)}`);
         }
 
         if (cmd === "shuffle") {
-            if (queue.length > 0) {
-                shuffle(queue);
+            if (queue[message.guild.id].songs.length > 0) {
+                shuffle(queue[message.guild.id].songs);
                 message.channel.sendMessage(":diamonds: :hearts: :spades: :clubs:").then(sent => {
                     setTimeout( () => {sent.edit(`:clubs: :hearts: :diamonds: :spades: :game_die:`)}, 500);
                     setTimeout( () => {sent.edit(`:spades: :diamonds: :clubs: :hearts: :ballot_box_with_check:`).then(sent2 => {sent2.delete(10000)})}, 1000);
@@ -178,34 +176,34 @@ bot.on("message", function(message) {
                 try {
                     let textfile = fs.lstatSync(`./playlists/${arg[1]}.txt`);
                     if (textfile.isFile() === true) {
-                        var links = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
+                        var list = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
 
                         // playing list / adding list
-                        if (playing === true) {
+                        if (queue[message.guild.id].playing === true) {
                             const filter = inputMsg => message.author.id === inputMsg.author.id;
-                            message.channel.sendMessage(`:point_up: This playlist contains ${links.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`verride)`).then(msg => {
+                            message.channel.sendMessage(`:point_up: This playlist contains ${list.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`verride)`).then(msg => {
                                 message.channel.awaitMessages(filter, {max: 1}).then(responses => {
                                     msg.delete();
                                     if(responses.first().content.toLowerCase().startsWith("o") === true) {
                                         queue = [];
                                         dispatcher.end();
-                                        addQueue(links[0]);
-                                        links.splice(0,1);
-                                        addQueueList(links, queue);
-                                        message.channel.sendMessage(`Resetting queue and adding ${links.length} songs to the queue...`);
+                                        addQueue(list[0], queue);
+                                        list.splice(0,1);
+                                        addQueueList(list, queue);
+                                        message.channel.sendMessage(`Resetting queue and adding ${list.length} songs to the queue...`);
                                     } else if (responses.first().content.toLowerCase().startsWith("a") === true) {
-                                        message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
-                                        addQueueList(links, queue);
+                                        message.channel.sendMessage(`Adding ${list.length} songs to the queue...`);
+                                        addQueueList(list, queue);
                                     } else {
                                         message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(10000)});;
                                     }
                                 });
                             });
                         } else {
-                            message.channel.sendMessage(`Adding ${links.length} songs to the queue...`);
-                            addQueue(links[0], queue);
-                            links.splice(0,1);
-                            addQueueList(links, queue);
+                            message.channel.sendMessage(`Adding ${list.length} songs to the queue...`);
+                            addQueue(list[0], queue);
+                            list.splice(0,1);
+                            addQueueList(list, queue);
                         }
                     }
                 } catch (err) {
@@ -242,11 +240,9 @@ bot.on("message", function(message) {
             message.channel.awaitMessages(filter, {max: 1}).then(responses => {
                 msg.delete();
                 if (responses.first().content.toLowerCase() === "yes" || responses.first().content.toLowerCase() === "y") {
-					console.log("yes, stop search");
 					addQueue(`https://youtu.be/${results.items[0].id.videoId}`, queue);
 					return;
 				} else if (responses.first().content.toLowerCase() === "no" || responses.first().content.toLowerCase() === "n") {
-					console.log("no, next item if possible");
 					results.items.splice(0, 1);
 					if (results.items.length > 0) {
 						confirmResult(results);
@@ -255,7 +251,6 @@ bot.on("message", function(message) {
 						return;
 					}
 				} else {
-					console.log("canceled");
 					message.channel.sendMessage("Search canceled. :no_entry_sign:").then(sent => {sent.delete(7500)});
 					return;
 				}
@@ -268,7 +263,10 @@ bot.on("message", function(message) {
         if (list.length > 0) {
             ytdl.getInfo(list[0], function(err, info) {
                 try {
-                    queue.push({url: list[0], user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
+                    if(!queue.hasOwnProperty(message.guild.id)) {
+                        queue[message.guild.id] = {playing: false, songs: [], dispatcher: null, currentSong: null, currentSongMsg: null};
+                    }
+                    queue[message.guild.id].songs.push({url: list[0], user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
                     utils.consoleLog("queue", `${message.author.username} added ${info.title} to the queue.\n`);
                     list.splice(0,1);
                     addQueueList(list, queue);
@@ -279,25 +277,28 @@ bot.on("message", function(message) {
     			}
             });
         } else {
-            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue)}]\``);
+            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue[message.guild.id].songs)}]\``);
         }
     }
 
     function addQueue(link, queue) {
         ytdl.getInfo(link, function(err, info) {
             try {
-                queue.push({url: link, user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
+                if(!queue.hasOwnProperty(message.guild.id)) {
+                    queue[message.guild.id] = {playing: false, songs: [], dispatcher: null, currentSong: null, currentSongMsg: null};
+                }
+                queue[message.guild.id].songs.push({url: link, user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
                 utils.consoleLog("queue", `${message.author.username} added ${info.title} to the queue.\n`),
                 message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
                 if(!message.guild.voiceConnection) {
                     // Case 1: no voice conn exists.
                     message.member.voiceChannel.join().then(connection => {
-                        playQueue(connection, queue);
+                        playQueue(connection, queue[message.guild.id]);
                     });
-                } else if (message.guild.voiceConnection && playing === false) {
+                } else if (message.guild.voiceConnection && queue[message.guild.id].playing === false) {
                     // Case 2: voice conn exists, but there is no queue playing.
-                    playQueue(message.guild.voiceConnection, queue);
-                } else if (message.guild.voiceConnection && playing === true) {
+                    playQueue(message.guild.voiceConnection, queue[message.guild.id]);
+                } else if (message.guild.voiceConnection && queue[message.guild.id].playing === true) {
                     // Case 3: voice conn exists, and a queue is already playing.
                     // do nothing
                 }
@@ -308,25 +309,24 @@ bot.on("message", function(message) {
         });
     }
 
-    function playQueue(voice, queue) {
-        ytdl.getInfo(queue[0].url, (err, info) => {
-            dispatcher = voice.playStream(ytdl.downloadFromInfo(info, {audioonly: true}), {volume: 0.33});
-            currentSong = queue[0];
-            currentSongNotif(currentSong, voice);
-            dispatcher.on("start", () => {
-                playing = true;
-                queue.splice(0,1);
+    function playQueue(voice, server) {
+        ytdl.getInfo(server.songs[0].url, (err, info) => {
+            server.dispatcher = voice.playStream(ytdl.downloadFromInfo(info, {audioonly: true}), {volume: 0.33});
+            server.currentSong = server.songs[0];
+            currentSongNotif(server.currentSong, voice);
+            server.dispatcher.on("start", () => {
+                server.playing = true;
+                server.songs.splice(0,1);
             });
-            dispatcher.on("end", () => {
-                if (queue.length > 0) {
+            server.dispatcher.on("end", () => {
+                if (server.songs.length > 0) {
                     // if the queue still has elements
-                    playQueue(voice, queue);
+                    playQueue(voice, server);
                 } else {
                     if(voice) {
                         voice.channel.leave();
-                        bot.user.setStatus("online", "- silent -");
-                        currentSong = null;
-                        playing = false;
+                        queue.currentSong = null;
+                        queue.playing = false;
                     }
                 }
             });
