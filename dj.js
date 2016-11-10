@@ -238,21 +238,24 @@ bot.on("message", function(message) {
     function confirmResult(results) {
         var linkId = results.items[0].id.videoId;
         const filter = message => message.author.id === results.userId;
-        message.channel.sendMessage(`Is this your video? Say \`yes\`/\`no\`/\`cancel\`.\nhttps://youtu.be/${results.items[0].id.videoId}`).then(msg => {
+        message.channel.sendMessage(`Is this your video? Say \`yes\`/\`no\`/\`cancel\`.\nhttps://youtu.be/${results.items[0].id.videoId}`).then(prompt => {
             message.channel.awaitMessages(filter, {max: 1}).then(responses => {
-                msg.delete();
+                prompt.delete();
                 if (responses.first().content.toLowerCase() === "yes" || responses.first().content.toLowerCase() === "y") {
 					console.log("yes, stop search");
 					addQueue(`https://youtu.be/${results.items[0].id.videoId}`, queue);
-					return;
+          responses.first().delete();
+          return;
 				} else if (responses.first().content.toLowerCase() === "no" || responses.first().content.toLowerCase() === "n") {
 					console.log("no, next item if possible");
 					results.items.splice(0, 1);
 					if (results.items.length > 0) {
-						confirmResult(results);
+            responses.first().delete();
+            confirmResult(results);
 					} else {
 						message.channel.sendMessage("Reached end of search results, you picky bastard! :upside_down:").then(sent => {sent.delete(7500)});
-						return;
+            responses.first().delete();
+            return;
 					}
 				} else {
 					console.log("canceled");
@@ -296,7 +299,7 @@ bot.on("message", function(message) {
                 info.voters = [];
                 queue.push(info);
                 utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
-                message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
+                message.channel.sendMessage(`${info.addedBy.username} added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
                 if(!message.guild.voiceConnection) {
                     // Case 1: no voice conn exists.
                     message.member.voiceChannel.join().then(connection => {
@@ -314,6 +317,7 @@ bot.on("message", function(message) {
 				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
 			}
         });
+      message.delete();
     }
 
     function playQueue(voice, queue) {
