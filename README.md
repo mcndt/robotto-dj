@@ -14,13 +14,13 @@ Start the bot with dj.bat.
  - search on youtube
  - shuffle
  - skip
+ - voteskip
  - pause/resume
+ - loading playlists from .txt files
 
 ## Planned features ##
-- voteskipping
 - multiserver support
-- playlist system
-- DJ user (has permissions to skip without voting, etc)
+- managing playlists inside discord
 
 ## Depends on the following Node modules: ##
  - discord.js
