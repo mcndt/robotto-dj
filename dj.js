@@ -163,7 +163,7 @@ bot.on("message", function(message) {
                 shuffle(queue);
                 message.channel.sendMessage(":diamonds: :hearts: :spades: :clubs:").then(sent => {
                     setTimeout( () => {sent.edit(`:clubs: :hearts: :diamonds: :spades: :game_die:`)}, 500);
-                    setTimeout( () => {sent.edit(`:spades: :diamonds: :clubs: :hearts: :ballot_box_with_check:`)}, 1000).then(sent2 => {sent2.delete(10000)});
+                    setTimeout( () => {sent.edit(`:spades: :diamonds: :clubs: :hearts: :ballot_box_with_check:`).then(sent2 => {sent2.delete(10000)})}, 1000);
                 });
             }
         }
@@ -268,16 +268,12 @@ bot.on("message", function(message) {
         if (list.length > 0) {
             ytdl.getInfo(list[0], function(err, info) {
                 try {
-                    info.addedBy = message.author;
-                    info.reqChannel = message.channel;
-                    info.votes = 0;
-                    info.voters = [];
-                    queue.push(info);
-                    utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
+                    queue.push({url: list[0], user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
+                    utils.consoleLog("queue", `${message.author.username} added ${info.title} to the queue.\n`);
                     list.splice(0,1);
                     addQueueList(list, queue);
                 } catch(err) {
-    				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
+    				utils.consoleLog("Error", `The requested link is not a video or is not available. (${err})\n`);
                     list.splice(0,1);
                     addQueueList(list, queue);
     			}
@@ -290,12 +286,8 @@ bot.on("message", function(message) {
     function addQueue(link, queue) {
         ytdl.getInfo(link, function(err, info) {
             try {
-                info.addedBy = message.author;
-                info.reqChannel = message.channel;
-                info.votes = 0;
-                info.voters = [];
-                queue.push(info);
-                utils.consoleLog("queue", `${info.addedBy.username} added ${info.title} to the queue.\n`);
+                queue.push({url: link, user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
+                utils.consoleLog("queue", `${message.author.username} added ${info.title} to the queue.\n`),
                 message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
                 if(!message.guild.voiceConnection) {
                     // Case 1: no voice conn exists.
@@ -317,37 +309,37 @@ bot.on("message", function(message) {
     }
 
     function playQueue(voice, queue) {
-        dispatcher = voice.playStream(ytdl.downloadFromInfo(queue[0], {audioonly: true}), {volume: 0.33});
-        currentSong = queue[0];
-        currentSongNotif(currentSong, voice);
-        dispatcher.on("start", () => {
-            playing = true;
-            bot.user.setStatus("online", queue[0].title);
-            queue.splice(0,1);
-        });
-        dispatcher.on("end", () => {
-            if (queue.length > 0) {
-                // if the queue still has elements
-                playQueue(voice, queue);
-            } else {
-                if(voice) {
-                    voice.channel.leave();
-                    bot.user.setStatus("online", "- silent -");
-                    currentSong = null;
-                    playing = false;
+        ytdl.getInfo(queue[0].url, (err, info) => {
+            dispatcher = voice.playStream(ytdl.downloadFromInfo(info, {audioonly: true}), {volume: 0.33});
+            currentSong = queue[0];
+            currentSongNotif(currentSong, voice);
+            dispatcher.on("start", () => {
+                playing = true;
+                queue.splice(0,1);
+            });
+            dispatcher.on("end", () => {
+                if (queue.length > 0) {
+                    // if the queue still has elements
+                    playQueue(voice, queue);
+                } else {
+                    if(voice) {
+                        voice.channel.leave();
+                        bot.user.setStatus("online", "- silent -");
+                        currentSong = null;
+                        playing = false;
+                    }
                 }
-            }
+            });
         });
-
     }
 
     function currentSongNotif(song, voice) {
-        utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.reqChannel.name} -> ${song.addedBy.username}\n`);
+        utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.channel.name} -> ${song.user.username}\n`);
         if(currentSongMsg === false) {
-            song.reqChannel.sendMessage(`Now playing: (requested by <@${song.addedBy.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
         } else {
             currentSongMsg.delete();
-            song.reqChannel.sendMessage(`Now playing: (requested by <@${song.addedBy.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
         }
     }
 
@@ -375,11 +367,11 @@ bot.on("message", function(message) {
     function printQueue(queue) {
         var list = "";
         if (currentSong !== null) {
-            list = `***Playing:*** ${currentSong.title} \`[${secToMin(currentSong.length_seconds)}]\` \`${currentSong.addedBy.username}\`\n\n` ;
+            list += `***Playing:*** ${currentSong.title} \`[${secToMin(currentSong.length_seconds)}]\` \`${currentSong.user.username}\`\n\n` ;
         }
         if (queue.length > 0) {
             for ( i = 0; i < queue.length; i++) {
-                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].addedBy.username}\`\n`;
+                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].user.username}\`\n`;
             }
         } else {
             list += `\t(*Empty*)`;
