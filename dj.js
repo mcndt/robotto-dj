@@ -108,61 +108,76 @@ bot.on("message", function(message) {
 
         if (cmd === "skip") {
             if (config.masterDJ.indexOf(message.author.id) >= 0) {
-                if(queue[message.guild.id].playing === true) {
-                    queue[message.guild.id].dispatcher.end();
-                    message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
-                } else {
-                    message.channel.sendMessage("You can't skip silence! :face_palm: ");
+                if(queue[message.guild.id]) {
+                    if(queue[message.guild.id].playing === true) {
+                        queue[message.guild.id].dispatcher.end();
+                        message.channel.sendMessage("Song skipped. :fast_forward:").then(sent => {sent.delete(5000);});
+                    } else {
+                        message.channel.sendMessage("You can't skip silence! :face_palm: ").then(sent => {sent.delete(5000);});
+                    }
                 }
             } else {
-                message.channel.sendMessage("You are not authorized to skip a song on demand. Only our benevolent dictators can do that.");
+                message.channel.sendMessage("You are not authorized to skip a song on demand. Only our benevolent dictators can do that.").then(sent => {sent.delete(5000);});
             }
         }
 
         if (cmd === "voteskip") {
-            if(queue[message.guild.id].playing === true) {
-                if (queue[message.guild.id].currentSong.voters.indexOf(message.author.id) < 0) {
-                    queue[message.guild.id].currentSong.voteskips += 1;
-                    queue[message.guild.id].currentSong.voters.push(message.author.id);
-                    queue[message.guild.id].currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
-                    if (queue[message.guild.id].currentSong.voteskips >= queue[message.guild.id].currentSong.votesNeeded) {
-                        let skippedSong = queue[message.guild.id].currentSong;
-                        queue[message.guild.id].dispatcher.end();
-                        message.channel.sendMessage(`${skippedSong.voteskips}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`);
+            if (queue[message.guild.id]) {
+                if(queue[message.guild.id].playing === true) {
+                    if (queue[message.guild.id].currentSong.voters.indexOf(message.author.id) < 0) {
+                        queue[message.guild.id].currentSong.voteskips += 1;
+                        queue[message.guild.id].currentSong.voters.push(message.author.id);
+                        queue[message.guild.id].currentSong.votesNeeded = Math.ceil( (message.guild.voiceConnection.channel.members.array().length - 1) / 2 ); // don't count self
+                        if (queue[message.guild.id].currentSong.voteskips >= queue[message.guild.id].currentSong.votesNeeded) {
+                            let skippedSong = queue[message.guild.id].currentSong;
+                            queue[message.guild.id].dispatcher.end();
+                            message.channel.sendMessage(`${skippedSong.voteskips}/${skippedSong.votesNeeded} votes received. Song will be skipped. :fast_forward:`).then(sent => {sent.delete(5000);});
+                        } else {
+                            message.channel.sendMessage(`${queue[message.guild.id].currentSong.voteskips}/${queue[message.guild.id].currentSong.votesNeeded} votes received. Need ${queue[message.guild.id].currentSong.votesNeeded - queue[message.guild.id].currentSong.voteskips} more...`).then(sent => {sent.delete(5000);});
+                        }
                     } else {
-                        message.channel.sendMessage(`${queue[message.guild.id].currentSong.voteskips}/${queue[message.guild.id].currentSong.votesNeeded} votes received. Need ${queue[message.guild.id].currentSong.votesNeeded - queue[message.guild.id].currentSong.voteskips} more...`);
+                        message.channel.sendMessage(`You already voted! :upside_down: ${queue[message.guild.id].currentSong.voteskips}/${queue[message.guild.id].currentSong.votesNeeded} votes received.`).then(sent => {sent.delete(5000);});
                     }
                 } else {
-                    message.channel.sendMessage(`You already voted! :upside_down:`)
+                    message.channel.sendMessage("You can't skip silence! :face_palm: ").then(sent => {sent.delete(5000);});
                 }
-            } else {
-                message.channel.sendMessage("You can't skip silence! :face_palm: ");
             }
         }
 
         if (cmd === "pause") {
-            if(queue[message.guild.id].playing === true) {
-                queue[message.guild.id].dispatcher.pause();
+            if (queue[message.guild.id]) {
+                if (queue[message.guild.id].playing === true) {
+                    queue[message.guild.id].dispatcher.pause();
+                }
             }
         }
 
         if (cmd === "resume") {
-            if(queue[message.guild.id].playing === true) {
-                queue[message.guild.id].dispatcher.resume();
+            if (queue[message.guild.id]) {
+                if (queue[message.guild.id].playing === true) {
+                    queue[message.guild.id].dispatcher.resume();
+                }
             }
         }
 
         if (cmd === "queue") {
-            message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id].songs)}`);
+            if(queue[message.guild.id]) {
+                message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id])}`)
+                .then(sent => {sent.delete(50000)});
+            } else {
+                message.channel.sendMessage("This server has no queue yet.").then(sent => {sent.delete(5000)});
+            }
         }
 
         if (cmd === "shuffle") {
-            if (queue[message.guild.id].songs.length > 0) {
-                shuffle(queue[message.guild.id].songs);
-                message.channel.sendMessage(":diamonds: :hearts: :spades: :clubs:").then(sent => {
-                    setTimeout( () => {sent.edit(`:clubs: :hearts: :diamonds: :spades: :game_die:`)}, 500);
-                    setTimeout( () => {sent.edit(`:spades: :diamonds: :clubs: :hearts: :ballot_box_with_check:`).then(sent2 => {sent2.delete(10000)})}, 1000);
-                });
+            if(queue[message.guild.id]) {
+                if (queue[message.guild.id].songs.length > 0) {
+                    shuffle(queue[message.guild.id].songs);
+                    message.channel.sendMessage(":diamonds: :hearts: :spades: :clubs:").then(sent => {
+                        setTimeout( () => {sent.edit(`:clubs: :hearts: :diamonds: :spades: :game_die:`)}, 500);
+                        setTimeout( () => {sent.edit(`:spades: :diamonds: :clubs: :hearts: :ballot_box_with_check:`).then(sent2 => {sent2.delete(10000)})}, 1000);
+                    });
+                }
             }
         }
 
@@ -179,6 +194,9 @@ bot.on("message", function(message) {
                         var list = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
 
                         // playing list / adding list
+                        if(!queue.hasOwnProperty(message.guild.id)) {
+                            queue[message.guild.id] = {playing: false, songs: [], dispatcher: null, currentSong: null, currentSongMsg: null};
+                        }
                         if (queue[message.guild.id].playing === true) {
                             const filter = inputMsg => message.author.id === inputMsg.author.id;
                             message.channel.sendMessage(`:point_up: This playlist contains ${list.length} songs. Do you wish to add this list to the queue or to override it? (Respond with \`A\`dd or \`O\`verride)`).then(msg => {
@@ -190,17 +208,17 @@ bot.on("message", function(message) {
                                         addQueue(list[0], queue);
                                         list.splice(0,1);
                                         addQueueList(list, queue);
-                                        message.channel.sendMessage(`Resetting queue and adding ${list.length} songs to the queue...`);
+                                        message.channel.sendMessage(`Resetting queue and adding ${list.length} songs to the queue...`).then(sent => {sent.delete(5000);});
                                     } else if (responses.first().content.toLowerCase().startsWith("a") === true) {
-                                        message.channel.sendMessage(`Adding ${list.length} songs to the queue...`);
+                                        message.channel.sendMessage(`Adding ${list.length} songs to the queue...`).then(sent => {sent.delete(5000);});
                                         addQueueList(list, queue);
                                     } else {
-                                        message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(10000)});;
+                                        message.channel.sendMessage("I don't understand that reply, canceling action. :cold_sweat: ").then(sent => {sent.delete(5000)});;
                                     }
                                 });
                             });
                         } else {
-                            message.channel.sendMessage(`Adding ${list.length} songs to the queue...`);
+                            message.channel.sendMessage(`Adding ${list.length} songs to the queue...`).then(sent => {sent.delete(5000);});
                             addQueue(list[0], queue);
                             list.splice(0,1);
                             addQueueList(list, queue);
@@ -215,6 +233,7 @@ bot.on("message", function(message) {
                 }
             }
         }
+    message.delete(5000);
     }
 
 
@@ -240,18 +259,20 @@ bot.on("message", function(message) {
             message.channel.awaitMessages(filter, {max: 1}).then(responses => {
                 msg.delete();
                 if (responses.first().content.toLowerCase() === "yes" || responses.first().content.toLowerCase() === "y") {
+                    responses.first().delete();
 					addQueue(`https://youtu.be/${results.items[0].id.videoId}`, queue);
 					return;
 				} else if (responses.first().content.toLowerCase() === "no" || responses.first().content.toLowerCase() === "n") {
-					results.items.splice(0, 1);
+                    responses.first().delete();
+                    results.items.splice(0, 1);
 					if (results.items.length > 0) {
 						confirmResult(results);
 					} else {
-						message.channel.sendMessage("Reached end of search results, you picky bastard! :upside_down:").then(sent => {sent.delete(7500)});
+						message.channel.sendMessage("Reached end of search results, you picky bastard! :upside_down:").then(sent => {sent.delete(5000)});
 						return;
 					}
 				} else {
-					message.channel.sendMessage("Search canceled. :no_entry_sign:").then(sent => {sent.delete(7500)});
+					message.channel.sendMessage("Search canceled. :no_entry_sign:").then(sent => {sent.delete(5000)});
 					return;
 				}
             });
@@ -277,7 +298,7 @@ bot.on("message", function(message) {
     			}
             });
         } else {
-            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue[message.guild.id].songs)}]\``);
+            message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue[message.guild.id].songs)}]\``).then(sent => {sent.delete(5000);});
         }
     }
 
@@ -289,7 +310,7 @@ bot.on("message", function(message) {
                 }
                 queue[message.guild.id].songs.push({url: link, user: message.author, channel: message.channel, title: info.title, length_seconds: info.length_seconds, voteskips: 0, voters: []});
                 utils.consoleLog("queue", `${message.author.username} added ${info.title} to the queue.\n`),
-                message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`);
+                message.channel.sendMessage(`Added ${info.title} \`[${secToMin(info.length_seconds)}]\` to the queue.`).then(sent => {sent.delete(5000);});
                 if(!message.guild.voiceConnection) {
                     // Case 1: no voice conn exists.
                     message.member.voiceChannel.join().then(connection => {
@@ -325,9 +346,10 @@ bot.on("message", function(message) {
                 } else {
                     if(voice) {
                         voice.channel.leave();
-                        queue.currentSong = null;
-                        queue.playing = false;
                     }
+                    server.playing = false;
+                    server.currentSong = null;
+                    server.currentSongMsg.delete();
                 }
             });
         });
@@ -335,11 +357,11 @@ bot.on("message", function(message) {
 
     function currentSongNotif(song, voice) {
         utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.channel.name} -> ${song.user.username}\n`);
-        if(currentSongMsg === false) {
-            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
+        if(queue[song.channel.guild.id].currentSongMsg === null) {
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
         } else {
-            currentSongMsg.delete();
-            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(message => {currentSongMsg = message;});
+            queue[song.channel.guild.id].currentSongMsg.delete();
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
         }
     }
 
@@ -366,12 +388,12 @@ bot.on("message", function(message) {
 
     function printQueue(queue) {
         var list = "";
-        if (currentSong !== null) {
-            list += `***Playing:*** ${currentSong.title} \`[${secToMin(currentSong.length_seconds)}]\` \`${currentSong.user.username}\`\n\n` ;
+        if (queue.currentSong !== null) {
+            list += `***Playing:*** ${queue.currentSong.title} \`[${secToMin(queue.currentSong.length_seconds)}]\` \`${queue.currentSong.user.username}\`\n\n` ;
         }
-        if (queue.length > 0) {
-            for ( i = 0; i < queue.length; i++) {
-                list += `**${(i+1)}.** ${queue[i].title} \`[${secToMin(queue[i].length_seconds)}]\` \`${queue[i].user.username}\`\n`;
+        if (queue.songs.length > 0) {
+            for ( i = 0; i < queue.songs.length; i++) {
+                list += `**${(i+1)}.** ${queue.songs[i].title} \`[${secToMin(queue.songs[i].length_seconds)}]\` \`${queue.songs[i].user.username}\`\n`;
             }
         } else {
             list += `\t(*Empty*)`;

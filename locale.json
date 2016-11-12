@@ -35,6 +35,10 @@
         {
             "cmd": "shuffle",
             "descr": "I'll shuffle the queue as well as a deck of cards."
+        },
+        {
+            "cmd": "playlist load {playlist name}",
+            "descr": "Loads the given playlist (if it exists)."
         }
     ]
 }
