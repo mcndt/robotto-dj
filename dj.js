@@ -169,6 +169,22 @@ bot.on("message", function(message) {
             }
         }
 
+        if (cmd === "clear") {
+            if (config.masterDJ.indexOf(message.author.id) >= 0) {
+                if (queue[message.guild.id]) {
+                    if (queue[message.guild.id].songs.length > 0) {
+                        queue[message.guild.id].songs = [];
+                    }
+                    if (queue[message.guild.id].playing === true) {
+                        queue[message.guild.id].dispatcher.end();
+                    }
+                    message.channel.sendMessage("Queue cleared. :crayon: ");
+                }
+            } else {
+                message.channel.sendMessage("You are not authorized to do that").then(sent => {sent.delete(5000)});
+            }
+        }
+
         if (cmd === "shuffle") {
             if(queue[message.guild.id]) {
                 if (queue[message.guild.id].songs.length > 0) {
