@@ -207,7 +207,12 @@ bot.on("message", function(message) {
                 try {
                     let textfile = fs.lstatSync(`./playlists/${arg[1]}.txt`);
                     if (textfile.isFile() === true) {
-                        var list = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString().split("\r\n");
+                        var list = fs.readFileSync(`./playlists/${arg[1]}.txt`).toString();
+                        if (list.contains("\r\n")) { // OS = Windows
+                            list = list.split("\r\n");
+                        } else { // OS = Unix
+                            list = list.split("\n");
+                        }
 
                         // playing list / adding list
                         if(!queue.hasOwnProperty(message.guild.id)) {
