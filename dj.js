@@ -24,7 +24,10 @@ ytsearch.setKey(config.youtubeDataAPIToken);
 bot.on("ready", function() {
     utils.consoleLog("system", "DJ is ready to operate!\n");
     bot.user.setUsername(config.displayName);
-    bot.user.setGame(`- silent -`);
+    bot.user.setGame(`&help`);
+    if (config.avatarURL) {
+        bot.user.setAvatar(config.avatarURL);
+    }
 });
 
 // command interpreter
@@ -163,7 +166,7 @@ bot.on("message", function(message) {
         if (cmd === "queue") {
             if(queue[message.guild.id]) {
                 message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id])}`)
-                .then(sent => {sent.delete(50000)});
+                .then(sent => {sent.delete(60000)});
             } else {
                 message.channel.sendMessage("This server has no queue yet.").then(sent => {sent.delete(5000)});
             }
@@ -178,10 +181,19 @@ bot.on("message", function(message) {
                     if (queue[message.guild.id].playing === true) {
                         queue[message.guild.id].dispatcher.end();
                     }
-                    message.channel.sendMessage("Queue cleared. :crayon: ");
+                    message.channel.sendMessage("Queue cleared. :crayon: ").then(sent => {sent.delete(5000)});
                 }
             } else {
-                message.channel.sendMessage("You are not authorized to do that").then(sent => {sent.delete(5000)});
+                message.channel.sendMessage("You are not authorized to do that.").then(sent => {sent.delete(5000)});
+            }
+        }
+
+        if (cmd === "reboot") { // requires pm2, forever, etc to work
+            if (config.masterDJ.indexOf(message.author.id) >= 0) {
+                message.channel.sendMessage("Rebooting... :arrows_counterclockwise:");
+                setTimeout( () => {process.exit()}, 1000);
+            } else {
+                message.channel.sendMessage("You are not authorized to do that.").then(sent => {sent.delete(5000)});
             }
         }
 

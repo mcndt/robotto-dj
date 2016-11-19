@@ -21,6 +21,10 @@
             "descr": "Skips the currently playing song."
         },
         {
+            "cmd": "voteskip",
+            "descr": "Vote to skip the the currently playing song. Requires over 50% of listeners to vote."
+        },
+        {
             "cmd": "pause",
             "descr": "Pauses the stream."
         },
