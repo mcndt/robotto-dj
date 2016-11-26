@@ -21,6 +21,10 @@
             "descr": "Skips the currently playing song."
         },
         {
+            "cmd": "voteskip",
+            "descr": "Vote to skip the the currently playing song. Requires over 50% of listeners to vote."
+        },
+        {
             "cmd": "pause",
             "descr": "Pauses the stream."
         },
@@ -35,6 +39,10 @@
         {
             "cmd": "shuffle",
             "descr": "I'll shuffle the queue as well as a deck of cards."
+        },
+        {
+            "cmd": "playlist load {playlist name}",
+            "descr": "Loads the given playlist (if it exists)."
         }
     ]
 }
