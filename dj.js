@@ -4,7 +4,8 @@ var discord    = require("discord.js"),
     ytdl       = require('ytdl-core'),
 	YouTube    = require('youtube-node'),
 	utils      = require("./utilities.js"),
-	config     = require("./config.json");
+	config     = require("./config.json"),
+    packinfo    = require("./package.json");
 
 // declaration of bot
 var bot = new discord.Client({autoReconnect: true});
@@ -51,6 +52,10 @@ bot.on("message", function(message) {
                     message.channel.sendMessage("I'm not in your channel, so I can't leave it.");
                 }
             }
+        }
+
+        if (cmd === "status") {
+            message.channel.sendMessage(`\`\`\`html\n<Version> v${packinfo.version}\n<Uptime>  ${utils.uptime(bot)}\n<Servers> ${bot.guilds.array().length} guilds\n<Users>   ${bot.users.array().length} members\`\`\``).then(sent => sent.delete(10000));
         }
 
         if (cmd === "play") {
