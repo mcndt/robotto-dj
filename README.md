@@ -9,6 +9,7 @@ Before running the bot, copy `default-config.json` and rename it to **config.jso
 Start the bot with dj.bat.
 
 ## Features include: ##
+ - multiserver support
  - queue system
  - play youtube link
  - search on youtube
@@ -19,7 +20,6 @@ Start the bot with dj.bat.
  - loading playlists from .txt files
 
 ## Planned features ##
-- multiserver support
 - managing playlists inside discord
 
 ## Depends on the following Node modules: ##
