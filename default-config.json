@@ -3,5 +3,6 @@
 	"youtubeDataAPIToken": "",
 	"displayName": "Robotto DJ",
 	"prefix": "&",
-	"masterDJ": [""]
+	"masterDJ": [""],
+	"enableReboot": false
 }

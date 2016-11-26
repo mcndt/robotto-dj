@@ -58,6 +58,10 @@ bot.on("message", function(message) {
             message.channel.sendMessage(`\`\`\`html\n<Version> v${packinfo.version}\n<Uptime>  ${utils.uptime(bot)}\n<Servers> ${bot.guilds.array().length} guilds\n<Users>   ${bot.users.array().length} members\`\`\``).then(sent => sent.delete(10000));
         }
 
+        if (cmd === "np") {
+            if (queue[message.guild.id] && queue[message.guild.id].playing === true) message.channel.sendMessage(`\`\`\`[${secToMin(queue[message.guild.id].dispatcher.time / 1000)} / ${secToMin(queue[message.guild.id].currentSong.length_seconds)}] ${queue[message.guild.id].currentSong.title}\`\`\``).then(sent => sent.delete(5000));
+        }
+
         if (cmd === "play") {
             if (arg[0]) {
 				if (arg[0].startsWith("https://www.youtube.com") || arg[0].startsWith("https://youtu.be")) {
@@ -194,11 +198,13 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "reboot") { // requires pm2, forever, etc to work
-            if (config.masterDJ.indexOf(message.author.id) >= 0) {
-                message.channel.sendMessage("Rebooting... :arrows_counterclockwise:");
-                setTimeout( () => {process.exit()}, 1000);
-            } else {
-                message.channel.sendMessage("You are not authorized to do that.").then(sent => {sent.delete(5000)});
+            if (config.enableReboot === true) {
+                if (config.masterDJ.indexOf(message.author.id) >= 0) {
+                    message.channel.sendMessage("Rebooting... :arrows_counterclockwise:");
+                    setTimeout( () => {process.exit()}, 1000);
+                } else {
+                    message.channel.sendMessage("You are not authorized to do that.").then(sent => {sent.delete(5000)});
+                }
             }
         }
 
@@ -271,6 +277,7 @@ bot.on("message", function(message) {
                 }
             }
         }
+
     message.delete(5000);
     }
 
@@ -396,10 +403,10 @@ bot.on("message", function(message) {
     function currentSongNotif(song, voice) {
         utils.consoleLog("stream", `Now playing: \n\tSong:    ${song.title} \n\tChannel: ${voice.channel.guild.name} -> ${voice.channel.name} \n\tRequest: #${song.channel.name} -> ${song.user.username}\n`);
         if(queue[song.channel.guild.id].currentSongMsg === null) {
-            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\`[${secToMin(song.length_seconds)}] ${song.title}\`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
         } else {
             queue[song.channel.guild.id].currentSongMsg.delete();
-            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\` ${song.title} [${secToMin(song.length_seconds)}] \`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
+            song.channel.sendMessage(`Now playing: (requested by <@${song.user.id}>) \n\`\`\`[${secToMin(song.length_seconds)}] ${song.title}\`\`\` `).then(sent => {queue[song.channel.guild.id].currentSongMsg = sent;});
         }
     }
 
