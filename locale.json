@@ -17,6 +17,14 @@
             "descr": "Amount of results is optional. Default is 1, max. is 5. If your search term starts with a number, use quotation marks."
         },
         {
+            "cmd": "status",
+            "descr": "Gives stats about my current state."
+        },
+        {
+            "cmd": "np",
+            "descr": "Shows the currently playing song, including its time."
+        },
+        {
             "cmd": "skip",
             "descr": "Skips the currently playing song."
         },
