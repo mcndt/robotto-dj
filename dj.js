@@ -25,7 +25,7 @@ ytsearch.setKey(config.youtubeDataAPIToken);
 bot.on("ready", function() {
     utils.consoleLog("system", "DJ is ready to operate!\n");
     bot.user.setUsername(config.displayName);
-    bot.user.setGame(`&help`);
+    bot.user.setGame(`&help (v${packinfo.version})`);
     if (config.avatarURL) {
         bot.user.setAvatar(config.avatarURL);
     }
