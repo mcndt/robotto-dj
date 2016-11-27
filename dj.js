@@ -66,7 +66,7 @@ bot.on("message", function(message) {
             if (arg[0]) {
 				if (arg[0].startsWith("https://www.youtube.com") || arg[0].startsWith("https://youtu.be")) {
                     if (arg[0].startsWith("https://www.youtube.com/playlist?list=")) {
-                        addPlaylist(arg[0], queue);
+                        addYoutubePlaylist(arg[0], queue);
                     } else {
                         addQueue(arg[0], queue);
                     }
@@ -284,9 +284,16 @@ bot.on("message", function(message) {
 
     // functions
 
-    function addPlaylist(link, queue) {
-        var id = link.slice(38);
-        message.channel.sendMessage("Adding playlists is currently not supported. :disappointed: ");
+    function addYoutubePlaylist(link, queue) {
+        ytsearch.getPlayListsItemsById(link.slice(38), 50, function(err, result) {
+            if (err) {
+                utils.consoleLog("error", JSON.stringify(err));
+            } else {
+                var list = new Array();
+                result.items.forEach(item => list.push(`https://youtu.be/${item.contentDetails.videoId}`));
+                addQueueList(list, queue);
+            }
+        });
     }
 
     function joinVoice() {

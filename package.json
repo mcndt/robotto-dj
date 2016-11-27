@@ -16,7 +16,7 @@
     "discord.js": "10.x.x",
     "node-opus": "*",
     "ytdl-core": "0.7.x",
-    "youtube-node": "1.3.x"
+    "youtube-node": "nodenica/youtube-node"
   },
   "bugs": {
     "url": "https://github.com/mcndt/robotto-dj/issues"
