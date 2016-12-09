@@ -40,28 +40,35 @@ bot.on("message", function(message) {
     if (cmd.substring(0, config.prefix.length) === config.prefix) {
         cmd = cmd.substring(config.prefix.length);
 
+        // join user's voice channel
         if (cmd === "join") {
-            joinVoice();
+            if(message.member.voiceChannel) {
+    			message.member.voiceChannel.join();
+    		} else {
+    			message.channel.sendMessage("You are not in a voice channel :frowning:").then(sent => sent.delete(10000));
+    		}
         }
 
+        // leave user's voice channel -- [master permissions]
         if (cmd === "leave") {
-            if(message.member.voiceChannel) {
-                if (message.member.voiceChannel.connection) {
-                    message.member.voiceChannel.leave();
-                } else {
-                    message.channel.sendMessage("I'm not in your channel, so I can't leave it.");
-                }
+            if(message.member.voiceChannel && message.member.voiceChannel.connection && config.masterDJ.indexOf(message.author.id) >= 0) {
+                message.member.voiceChannel.leave();
+            } else {
+                message.channel.sendMessage("I'm not in your channel, so I can't leave it. (*If I am in your channel, try using the join command first. I tend to forget where I am if you move me around* :confounded:*)*").then(sent => sent.delete(10000));
             }
         }
 
+        // display uptime and user stats
         if (cmd === "status") {
             message.channel.sendMessage(`\`\`\`html\n<Version> v${packinfo.version}\n<Uptime>  ${utils.uptime(bot)}\n<Servers> ${bot.guilds.array().length} guilds\n<Users>   ${bot.users.array().length} members\`\`\``).then(sent => sent.delete(10000));
         }
 
+        // display current song and timestamp
         if (cmd === "np") {
             if (queue[message.guild.id] && queue[message.guild.id].playing === true) message.channel.sendMessage(`\`\`\`[${secToMin(queue[message.guild.id].dispatcher.time / 1000)} / ${secToMin(queue[message.guild.id].currentSong.length_seconds)}] ${queue[message.guild.id].currentSong.title}\`\`\``).then(sent => sent.delete(10000));
         }
 
+        // add a youtube link to the queue -- video or playlist
         if (cmd === "play") {
             if(!queue.hasOwnProperty(message.guild.id)) {
                 queue[message.guild.id] = {playing: false, songs: [], dispatcher: null, currentSong: null, currentSongMsg: null};
@@ -74,13 +81,14 @@ bot.on("message", function(message) {
                         addQueue(arg[0], queue);
                     }
 				} else {
-					message.channel.sendMessage("That's not a YouTube link silly. :laughing:");
+					message.channel.sendMessage("That's not a YouTube link silly. :laughing:").then(sent => {sent.delete(10000);});
 				}
 			} else {
-				message.channel.sendMessage("You need to provide a YouTube link. :wink:");
+				message.channel.sendMessage("You need to provide a YouTube link. :wink:").then(sent => {sent.delete(10000);});
 			}
         }
 
+        // search on youtube
         if (cmd === "search") {
             // interpretation of searchterm and amount of results
             var amount = 1
@@ -121,6 +129,7 @@ bot.on("message", function(message) {
 			});
         }
 
+        // skip the current song -- [master permissions]
         if (cmd === "skip") {
             if (config.masterDJ.indexOf(message.author.id) >= 0) {
                 if(queue[message.guild.id]) {
@@ -132,10 +141,11 @@ bot.on("message", function(message) {
                     }
                 }
             } else {
-                message.channel.sendMessage("You are not authorized to skip a song on demand. Only our benevolent dictators can do that.").then(sent => {sent.delete(10000);});
+                message.channel.sendMessage("You are not authorized to skip a song on demand. Only your benevolent dictator(s) can do that.").then(sent => {sent.delete(10000);});
             }
         }
 
+        // vote to skip the current song (requires 50% of listeners to vote)
         if (cmd === "voteskip") {
             if (queue[message.guild.id]) {
                 if(queue[message.guild.id].playing === true) {
@@ -159,6 +169,7 @@ bot.on("message", function(message) {
             }
         }
 
+        // pause stream
         if (cmd === "pause") {
             if (queue[message.guild.id]) {
                 if (queue[message.guild.id].playing === true) {
@@ -167,6 +178,7 @@ bot.on("message", function(message) {
             }
         }
 
+        // resume stream
         if (cmd === "resume") {
             if (queue[message.guild.id]) {
                 if (queue[message.guild.id].playing === true) {
@@ -175,6 +187,7 @@ bot.on("message", function(message) {
             }
         }
 
+        // show the current queue
         if (cmd === "queue") {
             if(queue[message.guild.id]) {
                 let queuemsg = `Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id])}`;
@@ -185,6 +198,7 @@ bot.on("message", function(message) {
             }
         }
 
+        // clear the current queue -- [master permissions]
         if (cmd === "clear") {
             if (config.masterDJ.indexOf(message.author.id) >= 0) {
                 if (queue[message.guild.id]) {
@@ -201,7 +215,8 @@ bot.on("message", function(message) {
             }
         }
 
-        if (cmd === "reboot") { // requires pm2, forever, etc to work
+        // reboots the bot (requires pm2, forever, etc to work. Can be turned on in config.json) -- [master permissions]
+        if (cmd === "reboot") {
             if (config.enableReboot === true) {
                 if (config.masterDJ.indexOf(message.author.id) >= 0) {
                     message.channel.sendMessage("Rebooting... :arrows_counterclockwise:");
@@ -212,6 +227,7 @@ bot.on("message", function(message) {
             }
         }
 
+        // shuffles the queue
         if (cmd === "shuffle") {
             if(queue[message.guild.id]) {
                 if (queue[message.guild.id].songs.length > 0) {
@@ -224,10 +240,12 @@ bot.on("message", function(message) {
             }
         }
 
+        // shuffle
         if (cmd === "help") {
             message.author.sendMessage(utils.cmdList());
         }
 
+        // load a playlist from ./playlists (text files with youtube links seperated by line breaks)
         if (cmd === "playlist") {
             if (arg[0] === "load") {
                 // loading from text file
@@ -272,14 +290,6 @@ bot.on("message", function(message) {
                 listToQueue(list, queue);
             }
         });
-    }
-
-    function joinVoice() {
-        if(message.member.voiceChannel) {
-			message.member.voiceChannel.join();
-		} else {
-			message.channel.sendMessage("You are not in a voice channel :frowning:");
-		}
     }
 
     function confirmResult(results) {
