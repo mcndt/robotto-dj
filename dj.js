@@ -113,7 +113,12 @@ bot.on("message", function(message) {
 					console.log(err);
 				} else {
                     results.userId = message.author.id;
-					confirmResult(results);
+					if(results.items.length > 0) {
+						confirmResult(results);
+					}
+					else {
+						message.channel.sendMessage("Could not find any results :frowning:").then(sent => {sent.delete(5000);});
+					}
 				}
 			});
         }
