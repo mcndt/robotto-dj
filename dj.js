@@ -80,6 +80,11 @@ bot.on("message", function(message) {
 
         if (cmd === "search") {
             // interpretation of searchterm and amount of results
+			if(arg[0] === undefined) {
+				message.channel.sendMessage("I can't search for nothing, silly :laughing:").then(sent => {sent.delete(5000);});
+				message.delete(5000);
+				return;
+			}
             var amount = 1
 			var searchTerm = "";
 			if (isNaN(arg[0]) === false) {
@@ -113,7 +118,12 @@ bot.on("message", function(message) {
 					console.log(err);
 				} else {
                     results.userId = message.author.id;
-					confirmResult(results);
+					if(results.items.length > 0) {
+						confirmResult(results);
+					}
+					else {
+						message.channel.sendMessage("Could not find any results :frowning:").then(sent => {sent.delete(5000);});
+					}
 				}
 			});
         }
