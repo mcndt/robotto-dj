@@ -1,2 +1,0 @@
-node "dj.js"
-pause
