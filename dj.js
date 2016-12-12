@@ -35,8 +35,11 @@ bot.on("ready", function() {
 			c[1].fetchMessages({limit: 100})
 			 .then(messages => {
 			 	for(let m of messages) {
-				 	if(m[1].content === "Rebooting... :arrows_counterclockwise:"
+					if(m[1].content === "Rebooting... :arrows_counterclockwise:"
 					   && m[1].author.equals(bot.user)) {
+						m[1].delete();
+					}
+					else if(m[1].content === config.prefix + "reboot") {
 						m[1].delete();
 					}
 			 	}
