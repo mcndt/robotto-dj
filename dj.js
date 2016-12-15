@@ -201,7 +201,7 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "queue") {
-            if(queue[message.guild.id]) {
+            if(queue[message.guild.id].songs.length > 0) {
                 message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id])}*) \n\n${printQueue(queue[message.guild.id])}`)
                 .then(sent => {sent.delete(60000)});
             } else {
