@@ -29,6 +29,24 @@ bot.on("ready", function() {
     if (config.avatarURL) {
         bot.user.setAvatar(config.avatarURL);
     }
+	// Delete all reboot messages found in the last 100 messages of all channels
+	for (let c of bot.channels) {
+		if(c[1].type == "text") {
+			c[1].fetchMessages({limit: 100})
+			 .then(messages => {
+			 	for(let m of messages) {
+					if(m[1].content === "Rebooting... :arrows_counterclockwise:"
+					   && m[1].author.equals(bot.user)) {
+						m[1].delete();
+					}
+					else if(m[1].content === config.prefix + "reboot") {
+						m[1].delete();
+					}
+			 	}
+			 })
+			 .catch(console.error);
+		}
+	}
 });
 
 // command interpreter
@@ -184,7 +202,7 @@ bot.on("message", function(message) {
 
         if (cmd === "queue") {
             if(queue[message.guild.id]) {
-                message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id])}`)
+                message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id])}*) \n\n${printQueue(queue[message.guild.id])}`)
                 .then(sent => {sent.delete(60000)});
             } else {
                 message.channel.sendMessage("This server has no queue yet.").then(sent => {sent.delete(5000)});
@@ -432,11 +450,12 @@ bot.on("message", function(message) {
 		return min + ":" + sec;
 	}
 
-    function queueLength(queue) {
+    function queueLength(server) {
 		var lengthInSec = 0;
-		for ( i = 0; i < queue.length; i++) {
-				lengthInSec += Number(queue[i].length_seconds);
+		for ( i = 0; i < server.songs.length; i++) {
+			lengthInSec += Number(server.songs[i].length_seconds);
 		}
+		lengthInSec += server.currentSong.length_seconds - server.dispatcher.time / 1000;
 		var length = secToMin(lengthInSec);
 		return length;
 	}
