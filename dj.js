@@ -205,7 +205,7 @@ bot.on("message", function(message) {
                 message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id])}*) \n\n${printQueue(queue[message.guild.id])}`)
                 .then(sent => {sent.delete(60000)});
             } else {
-                message.channel.sendMessage("This server has no queue yet.").then(sent => {sent.delete(5000)});
+                message.channel.sendMessage("This server has no songs in the queue.").then(sent => {sent.delete(5000)});
             }
         }
 
@@ -397,7 +397,7 @@ bot.on("message", function(message) {
                     // do nothing
                 }
             } catch(err) {
-				message.channel.sendMessage("Either that is not a video, or it is not available where I am. :sob:");
+				message.channel.sendMessage("Either that is not a video, or it is not available where I am. :sob:").then(sent => {sent.delete(5000);});
 				utils.consoleLog("Error", "The requested link is not a video or is not available.\n");
 			}
         });
