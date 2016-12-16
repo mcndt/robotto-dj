@@ -367,7 +367,7 @@ bot.on("message", function(message) {
 				}
 			});
 		} else {
-			message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue[message.guild.id].songs)}]\``).then(sent => {sent.delete(10000);});
+			message.channel.sendMessage(`Finished adding your playlist. New queue lenght: \`[${queueLength(queue[message.guild.id])}]\``).then(sent => {sent.delete(10000);});
 		}
 	}
 
