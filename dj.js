@@ -201,8 +201,8 @@ bot.on("message", function(message) {
         }
 
         if (cmd === "queue") {
-            if(queue[message.guild.id]) {
-                message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id].songs)}*) \n\n${printQueue(queue[message.guild.id])}`)
+            if(queue[message.guild.id] && queue[message.guild.id].songs.length > 0) {
+                message.channel.sendMessage(`Here is the current queue. (*${queueLength(queue[message.guild.id])}*) \n\n${printQueue(queue[message.guild.id])}`)
                 .then(sent => {sent.delete(60000)});
             } else {
                 message.channel.sendMessage("This server has no queue yet.").then(sent => {sent.delete(5000)});
@@ -450,11 +450,12 @@ bot.on("message", function(message) {
 		return min + ":" + sec;
 	}
 
-    function queueLength(queue) {
+	function queueLength(server) {
 		var lengthInSec = 0;
-		for ( i = 0; i < queue.length; i++) {
-				lengthInSec += Number(queue[i].length_seconds);
+		for ( i = 0; i < server.songs.length; i++) {
+			lengthInSec += Number(server.songs[i].length_seconds);
 		}
+		lengthInSec += server.currentSong.length_seconds - server.dispatcher.time / 1000;
 		var length = secToMin(lengthInSec);
 		return length;
 	}
